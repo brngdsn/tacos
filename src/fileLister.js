@@ -1,3 +1,4 @@
+// src/fileLister.js
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import ignore from 'ignore';
@@ -6,16 +7,18 @@ import { estimateCost } from './cost.js';
 import { isBinaryContent } from './utils.js';
 import chalk from 'chalk';
 
-// Load ignore patterns from .gitignore (if it exists)
+// Load ignore patterns from .gitignore and .tacosignore (if they exist)
 // and add common directories that are typically ignored.
 async function loadIgnorePatterns(dir) {
   const ig = ignore();
-  try {
-    const gitignorePath = path.join(dir, '.gitignore');
-    const content = await fs.readFile(gitignorePath, 'utf8');
-    ig.add(content.split('\n').filter(Boolean));
-  } catch (e) {
-    // .gitignore not found; that’s OK.
+  for (const ignoreFile of ['.gitignore', '.tacosignore']) {
+    try {
+      const filePath = path.join(dir, ignoreFile);
+      const content = await fs.readFile(filePath, 'utf8');
+      ig.add(content.split('\n').filter(Boolean));
+    } catch (e) {
+      // File not found or unreadable; that's OK.
+    }
   }
   ig.add(['node_modules', '.git']);
   return ig;
@@ -39,24 +42,25 @@ export async function listFilesWithMetrics(dir, inputModel, outputModel) {
     const isIgnored = ig.ignores(relativePath);
     let displayName = entryName;
     
-    // If a directory, append a trailing slash and color it blue.
+    // Process directories and files separately for display styling.
     if (entry.isDirectory()) {
-      displayName = chalk.blue(displayName + '/');
+      // Append trailing slash for directories.
+      const folderName = entryName + '/';
+      // If the folder is ignored, apply blue color and dim it.
+      displayName = isIgnored ? chalk.bold.blue.dim(folderName) : chalk.bold.blue(folderName);
     } else {
       // For files, check if they are executable.
+      let baseName = entryName;
       try {
         const stat = await fs.stat(path.join(dir, entryName));
         if (stat.mode & 0o111) {
-          displayName = chalk.underline(displayName);
+          baseName = chalk.underline(baseName);
         }
       } catch(e) {
         // If stat fails, continue without marking as executable.
       }
-    }
-    
-    // If the entry is ignored, dim the text.
-    if (isIgnored) {
-      displayName = chalk.gray(displayName);
+      // If the file is ignored, dim with gray.
+      displayName = isIgnored ? chalk.gray(baseName) : baseName;
     }
     
     let size = null;
@@ -108,3 +112,4 @@ export async function listFilesWithMetrics(dir, inputModel, outputModel) {
   
   return results;
 }
+
