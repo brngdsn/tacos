@@ -1,7 +1,7 @@
 import process from 'node:process';
 import { listFilesWithMetrics } from './fileLister.js';
 import { getCostTable, getModelInfo } from './cost.js';
-import { formatFileSize, formatTokenCount, formatCost } from './utils.js';
+import { formatFileSize, formatTokenCount, formatCost, padAnsi } from './utils.js';
 import chalk from 'chalk';
 
 // Default model names – if not provided, use these.
@@ -59,7 +59,7 @@ export async function runCLI() {
   // Print header
   console.log(
     chalk.bold.white(
-      `${'Size'.padEnd(8)} ${'Name'.padEnd(20)} ${'Tokens'.padEnd(10)} ${'Input Cost'.padEnd(12)} ${'Output Cost'}`
+      `${padAnsi('Size', 10)} ${padAnsi('Name', 25)} ${padAnsi('Tokens', 10)} ${padAnsi('Input Cost', 12)} ${padAnsi('Output Cost', 12)}`
     )
   );
   
@@ -70,11 +70,11 @@ export async function runCLI() {
   // - Token count (yellow) or '-' if not applicable
   // - Estimated input cost (green) and output cost (green) if available.
   for (const file of files) {
-    const sizeStr = file.size !== null ? formatFileSize(file.size).padEnd(8) : '-'.padEnd(8);
-    const nameStr = file.displayName.padEnd(20);
-    const tokensStr = file.tokens !== null ? formatTokenCount(file.tokens).padEnd(10) : '-'.padEnd(10);
-    const inputCostStr = file.inputCost !== null ? formatCost(file.inputCost).padEnd(12) : '-'.padEnd(12);
-    const outputCostStr = file.outputCost !== null ? formatCost(file.outputCost) : '-';
+    const sizeStr = file.size !== null ? padAnsi(formatFileSize(file.size), 10) : padAnsi('-', 10);
+    const nameStr = padAnsi(file.displayName, 25);
+    const tokensStr = file.tokens !== null ? padAnsi(formatTokenCount(file.tokens), 10) : padAnsi('-', 10);
+    const inputCostStr = file.inputCost !== null ? padAnsi(formatCost(file.inputCost), 12) : padAnsi('-', 12);
+    const outputCostStr = file.outputCost !== null ? padAnsi(formatCost(file.outputCost), 12) : padAnsi('-', 12);
     console.log(
       `${sizeStr} ${nameStr} ${chalk.yellow(tokensStr)} ${chalk.green(inputCostStr)} ${chalk.green(outputCostStr)}`
     );
@@ -89,17 +89,17 @@ function displayCostTable() {
   const colWidths = [20, 20, 22, 15];
   
   const headerStr = headers
-    .map((h, i) => chalk.bold.white(h.padEnd(colWidths[i])))
+    .map((h, i) => chalk.bold.white(padAnsi(h, colWidths[i])))
     .join(' ');
   console.log(headerStr);
   
   for (const row of tableData) {
-    const model = row.model.padEnd(colWidths[0]);
-    const inputCost = (row.inputCost !== null ? `$${row.inputCost.toFixed(2)}` : 'N/A').padEnd(colWidths[1]);
-    const outputCost = (row.outputCost !== null ? `$${row.outputCost.toFixed(2)}` : 'N/A').padEnd(colWidths[2]);
-    const context = row.context ? `${row.context.toLocaleString()} tokens` : 'N/A';
+    const model = padAnsi(row.model, colWidths[0]);
+    const inputCost = padAnsi((row.inputCost !== null ? `$${row.inputCost.toFixed(2)}` : 'N/A'), colWidths[1]);
+    const outputCost = padAnsi((row.outputCost !== null ? `$${row.outputCost.toFixed(2)}` : 'N/A'), colWidths[2]);
+    const context = row.context ? padAnsi(`${row.context.toLocaleString()} tokens`, colWidths[3]) : padAnsi('N/A', colWidths[3]);
     console.log(
-      `${chalk.white(model)} ${chalk.green(inputCost)} ${chalk.green(outputCost)} ${chalk.cyan(context.padEnd(colWidths[3]))}`
+      `${chalk.white(model)} ${chalk.green(inputCost)} ${chalk.green(outputCost)} ${chalk.cyan(context)}`
     );
   }
 }

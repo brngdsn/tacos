@@ -1,3 +1,5 @@
+import stringWidth from 'string-width';
+
 // Format a byte size into a human‐readable string.
 export function formatFileSize(bytes) {
   if (bytes < 1024) return `${bytes}B`;
@@ -22,4 +24,11 @@ export function formatCost(cost) {
 // Here we simply check for the presence of a null character.
 export function isBinaryContent(content) {
   return content.includes('\0');
+}
+
+// Pad a string (which may contain ANSI escape codes) to a given visible width.
+export function padAnsi(str, targetLength) {
+  const currentWidth = stringWidth(str);
+  if (currentWidth >= targetLength) return str;
+  return str + ' '.repeat(targetLength - currentWidth);
 }
