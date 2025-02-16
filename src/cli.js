@@ -35,6 +35,7 @@ export async function runCLI() {
     .argument('[inputModel]', 'input model', DEFAULT_INPUT_MODEL)
     .argument('[outputModel]', 'output model', DEFAULT_OUTPUT_MODEL)
     .option('-r, --recursive', 'Recursively traverse directories')
+    .option('-x, --recursive-collapse', 'Recursively collapse directories')
     .option('-c, --cost-table', 'Display cost table')
     .parse(process.argv);
 
@@ -51,8 +52,12 @@ export async function runCLI() {
   const inputModelName = resolveModelName(inputModelArg);
   const outputModelName = resolveModelName(outputModelArg);
 
-  const inputModel = getModelInfo(inputModelName);
-  const outputModel = getModelInfo(outputModelName);
+  const inputModel = getCostTable() && getCostTable().find(m => m.model.toLowerCase() === inputModelName)
+    ? getCostTable().find(m => m.model.toLowerCase() === inputModelName)
+    : getModelInfo(inputModelName);
+  const outputModel = getCostTable() && getCostTable().find(m => m.model.toLowerCase() === outputModelName)
+    ? getCostTable().find(m => m.model.toLowerCase() === outputModelName)
+    : getModelInfo(outputModelName);
 
   if (!inputModel) {
     console.error(chalk.red(`Unknown input model: ${inputModelArg}`));
@@ -65,7 +70,10 @@ export async function runCLI() {
 
   // List files in the current directory.
   const dir = process.cwd();
-  const files = await listFilesWithMetrics(dir, inputModel, outputModel, { recursive: options.recursive });
+  const files = await listFilesWithMetrics(dir, inputModel, outputModel, {
+    recursive: options.recursive,
+    recursiveCollapse: options.recursiveCollapse
+  });
 
   // Print header.
   console.log(
@@ -75,25 +83,22 @@ export async function runCLI() {
   );
 
   // For each file/directory, show:
-  // - Human-friendly file size (white or magenta for cumulative rows)
-  // - File/folder name (colored; dimmed if ignored, blue+slash if directory,
-  //   underlined if executable)
+  // - Human-friendly file size (white or with magenta inversion for collapsed/cumulative rows)
+  // - File/folder name (colored; dimmed if ignored, blue+slash if directory, underlined if executable)
   // - Token count (yellow) or '-' if not applicable
   // - Estimated input cost (green) and output cost (green) if available.
-  // For cumulative rows, swap text and background colors.
+  // For cumulative/collapsed rows, swap text and background colors.
   for (const file of files) {
     let row = '';
-    if (file.rowType === 'cumulative') {
+    if (file.rowType === 'cumulative' || file.rowType === 'collapsed') {
       const sizeStr = file.size !== null ? padAnsi(formatFileSize(file.size), 10) : padAnsi('-', 10);
       const tokensStr = file.tokens !== null ? padAnsi(formatTokenCount(file.tokens), 10) : padAnsi('-', 10);
       const inputCostStr = file.inputCost !== null ? padAnsi(formatCost(file.inputCost), 12) : padAnsi('-', 12);
       const outputCostStr = file.outputCost !== null ? padAnsi(formatCost(file.outputCost), 12) : padAnsi('-', 12);
 
-      // For cumulative rows, for size use magenta background with white text.
+      // For cumulative/collapsed rows, invert colors:
       const sizeCumulative = chalk.bgMagenta.white(sizeStr);
-      // Invert the usual colors for tokens (yellow becomes yellow background with dark text).
       const tokensCumulative = chalk.bgYellow.black(tokensStr);
-      // Invert green for cost columns.
       const inputCostCumulative = chalk.bgGreen.black(inputCostStr);
       const outputCostCumulative = chalk.bgGreen.black(outputCostStr);
 
