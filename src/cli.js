@@ -83,27 +83,37 @@ export async function runCLI() {
   );
 
   // For each file/directory, show:
-  // - Human-friendly file size (white or with magenta inversion for collapsed/cumulative rows)
+  // - Human-friendly file size (white normally, or with swapped colors for cumulative/collapsed rows if not ignored)
   // - File/folder name (colored; dimmed if ignored, blue+slash if directory, underlined if executable)
   // - Token count (yellow) or '-' if not applicable
   // - Estimated input cost (green) and output cost (green) if available.
-  // For cumulative/collapsed rows, swap text and background colors.
+  // For cumulative/collapsed rows, swap text and background colors only if the folder is not ignored.
   for (const file of files) {
     let row = '';
     if (file.rowType === 'cumulative' || file.rowType === 'collapsed') {
-      const sizeStr = file.size !== null ? padAnsi(formatFileSize(file.size), 10) : padAnsi('-', 10);
-      const tokensStr = file.tokens !== null ? padAnsi(formatTokenCount(file.tokens), 10) : padAnsi('-', 10);
-      const inputCostStr = file.inputCost !== null ? padAnsi(formatCost(file.inputCost), 12) : padAnsi('-', 12);
-      const outputCostStr = file.outputCost !== null ? padAnsi(formatCost(file.outputCost), 12) : padAnsi('-', 12);
+      if (!file.isIgnored) {
+        // For non-ignored cumulative/collapsed rows, swap colors.
+        const sizeStr = file.size !== null ? padAnsi(formatFileSize(file.size), 10) : padAnsi('-', 10);
+        const tokensStr = file.tokens !== null ? padAnsi(formatTokenCount(file.tokens), 10) : padAnsi('-', 10);
+        const inputCostStr = file.inputCost !== null ? padAnsi(formatCost(file.inputCost), 12) : padAnsi('-', 12);
+        const outputCostStr = file.outputCost !== null ? padAnsi(formatCost(file.outputCost), 12) : padAnsi('-', 12);
 
-      // For cumulative/collapsed rows, invert colors:
-      const sizeCumulative = chalk.bgMagenta.white(sizeStr);
-      const tokensCumulative = chalk.bgYellow.black(tokensStr);
-      const inputCostCumulative = chalk.bgGreen.black(inputCostStr);
-      const outputCostCumulative = chalk.bgGreen.black(outputCostStr);
+        const sizeCumulative = chalk.bgMagenta.white(sizeStr);
+        const tokensCumulative = chalk.bgYellow.black(tokensStr);
+        const inputCostCumulative = chalk.bgGreen.black(inputCostStr);
+        const outputCostCumulative = chalk.bgGreen.black(outputCostStr);
 
-      const nameStr = padAnsi(file.displayName, 25);
-      row = `${sizeCumulative} ${nameStr} ${tokensCumulative} ${inputCostCumulative} ${outputCostCumulative}`;
+        const nameStr = padAnsi(file.displayName, 25);
+        row = `${sizeCumulative} ${nameStr} ${tokensCumulative} ${inputCostCumulative} ${outputCostCumulative}`;
+      } else {
+        // For ignored cumulative/collapsed rows, do not swap colors; display in gray.
+        const sizeStr = file.size !== null ? padAnsi(formatFileSize(file.size), 10) : padAnsi('-', 10);
+        const tokensStr = file.tokens !== null ? padAnsi(formatTokenCount(file.tokens), 10) : padAnsi('-', 10);
+        const inputCostStr = file.inputCost !== null ? padAnsi(formatCost(file.inputCost), 12) : padAnsi('-', 12);
+        const outputCostStr = file.outputCost !== null ? padAnsi(formatCost(file.outputCost), 12) : padAnsi('-', 12);
+        const nameStr = padAnsi(file.displayName, 25);
+        row = `${chalk.gray(sizeStr)} ${chalk.gray(nameStr)} ${chalk.gray(tokensStr)} ${chalk.gray(inputCostStr)} ${chalk.gray(outputCostStr)}`;
+      }
     } else {
       const sizeStr = file.size !== null ? padAnsi(formatFileSize(file.size), 10) : padAnsi('-', 10);
       const nameStr = padAnsi(file.displayName, 25);
