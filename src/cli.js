@@ -1,3 +1,4 @@
+// src/cli.js
 import process from 'node:process';
 import { listFilesWithMetrics } from './fileLister.js';
 import { getCostTable, getModelInfo } from './cost.js';
@@ -69,15 +70,21 @@ export async function runCLI() {
   //   underlined if executable)
   // - Token count (yellow) or '-' if not applicable
   // - Estimated input cost (green) and output cost (green) if available.
+  // For ignored files/folders, the entire row, including the '-' placeholders,
+  // should appear in gray.
   for (const file of files) {
     const sizeStr = file.size !== null ? padAnsi(formatFileSize(file.size), 10) : padAnsi('-', 10);
     const nameStr = padAnsi(file.displayName, 25);
     const tokensStr = file.tokens !== null ? padAnsi(formatTokenCount(file.tokens), 10) : padAnsi('-', 10);
     const inputCostStr = file.inputCost !== null ? padAnsi(formatCost(file.inputCost), 12) : padAnsi('-', 12);
     const outputCostStr = file.outputCost !== null ? padAnsi(formatCost(file.outputCost), 12) : padAnsi('-', 12);
-    console.log(
-      `${sizeStr} ${nameStr} ${chalk.yellow(tokensStr)} ${chalk.green(inputCostStr)} ${chalk.green(outputCostStr)}`
-    );
+    let row;
+    if (file.isIgnored) {
+      row = `${chalk.gray(sizeStr)} ${chalk.gray(nameStr)} ${chalk.gray(tokensStr)} ${chalk.gray(inputCostStr)} ${chalk.gray(outputCostStr)}`;
+    } else {
+      row = `${sizeStr} ${nameStr} ${chalk.yellow(tokensStr)} ${chalk.green(inputCostStr)} ${chalk.green(outputCostStr)}`;
+    }
+    console.log(row);
   }
 }
 
@@ -103,3 +110,4 @@ function displayCostTable() {
     );
   }
 }
+
