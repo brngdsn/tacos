@@ -31,7 +31,7 @@ export async function runCLI() {
   program
     .name('tacos')
     .description('Token And Context Output Summarizer')
-    .version('0.2.0')
+    .version('0.2.1')
     .argument('[inputModel]', 'input model', DEFAULT_INPUT_MODEL)
     .argument('[outputModel]', 'output model', DEFAULT_OUTPUT_MODEL)
     .option('-r, --recursive', 'Recursively traverse directories')

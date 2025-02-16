@@ -1,6 +1,6 @@
 {
   "name": "@brngdsn/tacos",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Token And Context Output Summarizer",
   "type": "module",
   "repository": {
