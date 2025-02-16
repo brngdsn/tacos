@@ -3,6 +3,15 @@
   "version": "0.2.0",
   "description": "Token And Context Output Summarizer",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/brngdsn/tacos.git"
+  },
+  "author": "brn.gdsn@gmail.com",
+  "bugs": {
+    "url": "https://github.com/brngdsn/tacos/issues"
+  },
+  "homepage": "https://github.com/brngdsn/tacos#readme",
   "bin": {
     "tacos": "./bin/tacos.js"
   },
